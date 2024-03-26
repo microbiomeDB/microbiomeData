@@ -1,21 +1,40 @@
-#' @rdname getCollectionNames
-#' @aliases getCollectionNames,MbioDataset-method
-setMethod("getCollectionNames", "MbioDataset", function(object) return(unname(getCollectionNames(object@collections))))
+collectionNamesGeneric <- getGeneric("getCollectionNames", "veupathUtils")
+#' Get Names of Collections
+#' 
+#' Get the names of the collections in a MbioDataset object
+#' @param object An MbioDataset
+#' @return A character vector of collection names
+#' @export
+setMethod(collectionNamesGeneric, "MbioDataset", function(object) return(unname(getCollectionNames(object@collections))))
 
-#' @rdname getMetadataVariableNames
-#' @aliases getMetadataVariableNames,MbioDataset-method
-setMethod("getMetadataVariableNames", "MbioDataset", function(object) return(names(object@metadata@data)))
+metadataVarNamesGeneric <- getGeneric("getMetadataVariableNames", "veupathUtils")
+#' Get Variable Names of Metadata
+#' 
+#' Get the names of the metadata variables in an MbioDataset.
+#' @param object An MbioDataset
+#' @return a character vector of metadata variable names
+#' @export
+setMethod(metadataVarNamesGeneric, "MbioDataset", function(object) return(names(object@metadata@data)))
 
-#' @rdname getSampleMetadata
-#' @aliases getSampleMetadata,MbioDataset-method
-setMethod("getSampleMetadata", "MbioDataset", function(object, asCopy = c(TRUE, FALSE), includeIds = c(TRUE, FALSE), metadataVariables = NULL) {
+sampleMetadataGeneric <- getGeneric("getSampleMetadata", "veupathUtils")
+#' Get data.table of sample metadata from MbioDataset
+#'
+#' Returns a data.table of sample metadata
+#' 
+#' @param object MbioDataset
+#' @param asCopy boolean indicating whether to return the data as a copy or by reference
+#' @param includeIds boolean indicating whether we should include recordIdColumn and ancestorIdColumns
+#' @param metadataVariables The metadata variables to include in the sample metadata. If NULL, all metadata variables will be included.
+#' @return data.table of sample metadata
+#' @export
+setMethod(sampleMetadataGeneric, "MbioDataset", function(object, asCopy = c(TRUE, FALSE), includeIds = c(TRUE, FALSE), metadataVariables = NULL) {
     asCopy <- veupathUtils::matchArg(asCopy)
     includeIds <- veupathUtils::matchArg(includeIds)
 
     if (!length(object@metadata@data)) return(NULL)
 
     dt <- object@metadata@data
-    allIdColumns <- getSampleMetadataIdColumns(object)
+    allIdColumns <- veupathUtils::getSampleMetadataIdColumns(object)
 
     # Check that incoming dt meets requirements
     if (!inherits(dt, 'data.table')) {
@@ -37,10 +56,13 @@ setMethod("getSampleMetadata", "MbioDataset", function(object, asCopy = c(TRUE, 
     return(dt)
 })
 
-
-#' @rdname getSampleMetadataIdColumns
-#' @aliases getSampleMetadataIdColumns,MbioDataset-method
-setMethod("getSampleMetadataIdColumns", "MbioDataset", function(object) getIdColumns(object@metadata))
+metadataIdColsGeneric <- getGeneric("getSampleMetadataIdColumns", "veupathUtils")
+#' Get Sample Metadata Id Column Names
+#' 
+#' Get the names of the record and ancestor id columns in the sample metadata of an MbioDataset object.
+#' @param object MbioDataset
+#' @return a character vector of id column names
+setMethod(metadataIdColsGeneric, "MbioDataset", function(object) veupathUtils::getIdColumns(object@metadata))
 
 
 #' Update Microbiome Dataset Collection Name
@@ -72,7 +94,6 @@ setMethod("updateCollectionName", "MbioDataset", function(object, oldName, newNa
 #' @return An AbundanceData, phyloseq, or Collection object representing the collection and any associated study metadata
 #' @importFrom phyloseq phyloseq
 #' @include class-AbundanceData.R
-#' @include class-SampleMetadata.R
 #' @rdname getCollection
 #' @export
 setGeneric("getCollection", function(object, collectionName, format = c("AbundanceData", "phyloseq", "Collection"), continuousMetadataOnly = c(FALSE, TRUE)) standardGeneric("getCollection"))
@@ -141,6 +162,7 @@ setMethod("getCollection", "MbioDataset", function(object, collectionName = char
     if (format == "AbundanceData") {
 
         abundanceData <- AbundanceData(
+            name = collection@name,
             data = collectionDT, 
             sampleMetadata = sampleMetadata, 
             recordIdColumn = collection@recordIdColumn,
